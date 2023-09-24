@@ -1,0 +1,72 @@
+---
+version: '3.9'
+
+networks:
+  profile:
+    driver: bridge
+
+services:
+  manager_php-fpm:
+    image: bitnami/php-fpm:8.2
+    ports:
+      - '9010:9010'
+#    environment:
+#      - SYMFONY_PROJECT_SKELETON=symfony/skeleton:"6.2.*"
+#      - SYMFONY_DATABASE_HOST=mysql
+#      - SYMFONY_DATABASE_PORT_NUMBER=3306
+#      - SYMFONY_DATABASE_USER=symfony_master
+#      - SYMFONY_DATABASE_NAME=poll
+#      - SYMFONY_DATABASE_PASSWORD_FILE=/run/secrets/user.pwd
+#      - PHP_FPM_LISTEN_ADDRESS=0.0.0.0:9000
+#      - PHP_DATE_TIMEZONE=Asia/Yekaterinburg
+#      - PHP_ENABLE_OPCACHE=yes
+    volumes:
+      - '../app:/app:rw'
+      - './php-fpm/php.ini:/opt/bitnami/php/etc/conf.d/php.ini:ro'
+#      - './php-fpm/php.ini:/opt/bitnami/php/etc/php.ini:ro'
+#      - ./db/secrets/user.pwd:/run/secrets/user.pwd:ro
+#      - ./scripts/symfony/entrypoint.sh:/opt/bitnami/scripts/symfony/entrypoint.sh:ro
+#      - ./scripts/symfony/init.sh:/opt/bitnami/scripts/symfony/init.sh:ro
+    networks:
+      - profile
+    depends_on:
+      - manager_mysql
+
+  manager_nginx:
+    image: docker.io/bitnami/nginx:1.25
+    ports:
+      - "8080:8080"
+      - "443:8443"
+    networks:
+      - profile
+    depends_on:
+      - manager_php-fpm
+    volumes:
+      - './../app/public:/app/public'
+      - ./nginx/server_blocks:/opt/bitnami/nginx/conf/server_blocks:ro
+      - ./nginx/logs:/opt/bitnami/nginx/logs
+
+  manager_mysql:
+    image: bitnami/mysql:8.1
+    environment:
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/root.pwd
+      - MYSQL_PASSWORD_FILE=/run/secrets/user.pwd
+      - MYSQL_REPLICATION_PASSWORD_FILE=/run/secrets/replica.pwd
+      - MYSQL_USER=profile_master
+      - MYSQL_DATABASE=profile
+      - MYSQL_COLLATE=utf8mb4_unicode_ci
+      - MYSQL_CHARACTER_SET=utf8mb4
+      - MYSQL_REPLICATION_USER=slave_read_user
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./db/secrets:/run/secrets:ro
+      - ./db/mysql:/bitnami/mysql:rw
+    networks:
+      - profile
+
+volumes:
+  nginx_log:
+  symfony_log:
+  db:
+    driver: local
