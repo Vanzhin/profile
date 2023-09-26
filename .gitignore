@@ -4,3 +4,5 @@
 docker/db/mysql/data/
 
 docker/nginx/logs/
+
+app/.env
