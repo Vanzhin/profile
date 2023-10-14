@@ -13,9 +13,14 @@ class UserFixture extends Fixture
     const REFERENCE = 'user';
     use FakerTool;
 
+    public function __construct(private readonly UserFactory $userFactory)
+    {
+    }
+
+
     public function load(ObjectManager $manager)
     {
-        $user = (new UserFactory())->create($this->getFaker()->email(), $this->getFaker()->password());
+        $user = $this->userFactory->create($this->getFaker()->email(), $this->getFaker()->password());
         $manager->persist($user);
         $manager->flush();
         $this->addReference(self::REFERENCE, $user);

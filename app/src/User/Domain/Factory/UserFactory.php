@@ -3,12 +3,20 @@
 namespace App\User\Domain\Factory;
 
 use App\User\Domain\Entity\User;
+use App\User\Domain\Service\UserPasswordHasherInterface;
 
 class UserFactory
 {
-
-    public function create(string $email, string $password): User
+    public function __construct(private readonly UserPasswordHasherInterface $hasher)
     {
-        return new User($email, $password);
+    }
+
+    public function create(string $email, string $password = null): User
+    {
+        $user = new User($email);
+        if ($password) {
+            $user->setPassword($password, $this->hasher);
+        }
+        return $user;
     }
 }
